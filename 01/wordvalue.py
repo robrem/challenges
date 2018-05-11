@@ -3,9 +3,7 @@ from data import DICTIONARY, LETTER_SCORES
 def load_words():
     """Load dictionary into a list and return list"""
     with open(DICTIONARY, 'r') as f:
-        words = f.readlines()
-    # words = [x.strip() for x in words]
-    return [x.strip() for x in words]
+        return [word.strip() for word in f.readlines()]
 
 def calc_word_value(word):
     """Calculate the value of the word entered into function
