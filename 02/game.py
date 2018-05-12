@@ -3,6 +3,7 @@
 # http://pybit.es/codechallenge02.html
 
 from data import DICTIONARY, LETTER_SCORES, POUCH
+from collections import Counter
 import itertools
 import random
 
@@ -25,24 +26,43 @@ def draw_letters():
 
 def get_possible_dict_words(letters):
     """Return list of words from DICTIONARY that can be made from letters"""
-    return [x for x in _get_permutations_draw(letters) if x in DICTIONARY]
+    return [x for x in _get_permutations_draw(letters) if x.lower() in DICTIONARY]
 
 def _get_permutations_draw(letters):
+    """Return set of all permutations of letters of length 1 through NUM_LETTERS inclusive"""
     perms =  [list(itertools.permutations(letters, n)) for n in range(1, NUM_LETTERS + 1)]
     return set([''.join(x) for perm in perms for x in perm])
 
-def _validate(guess, draw):
+def validate(guess, draw):
     """Ensure that all letters of guess are in draw, and guess is in DICTIONARY"""
-    pass
+    if len(guess) > len(draw):
+        return False
+    if guess.lower() not in DICTIONARY:
+        return False
+    # True if resulting Counter is empty, i.e. guess can be made from draw
+    return not Counter(guess) - Counter(draw)
 
 def calc_score(player_score, optimal_score):
-    pass
+    return player_score / optimal_score
 
 def main():
-    pass
+    draw = draw_letters()
+    print(f'Letters drawn: {", ".join(draw)}')
 
+    while True:
+        guess = input('Form a valid word: ').upper()
+        if not validate(guess, draw):
+            print('Invalid guess. Try again.')
+        else:
+            break
+
+    guess_value = calc_word_value(guess)
+    print(f'Word chosen: {guess} (value: {guess_value})')
+    optimal_word = max_word_value(get_possible_dict_words(draw))
+    optimal_value = calc_word_value(optimal_word)
+    print(f'Optimal word possible: {optimal_word} (value: {optimal_value})')
+    score = round(calc_score(guess_value, optimal_value), 1)
+    print(f'You scored: {score}')
 
 if __name__ == "__main__":
     main()
-
-print(get_possible_dict_words('apple'))
