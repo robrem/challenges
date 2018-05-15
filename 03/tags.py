@@ -15,7 +15,7 @@ def get_tags():
     tags = []
     e = ET.parse(RSS_FEED).getroot()
     for category in e.iter('category'):
-        tags.append(category.text.replace('-', ' '))
+        tags.append(category.text.replace('-', ' ').lower())
     return tags
 
 
