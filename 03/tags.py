@@ -30,8 +30,10 @@ def get_similarities(tags):
     similar_tags = []
     tags = list(set(tags))
     for pair in itertools.combinations(tags, 2):
-        if SequenceMatcher(None, *pair).ratio() > SIMILAR:
-            similar_tags.append(sorted(pair))
+        # Short circuit if first chars don't match
+        if pair[0][0] == pair[1][0]:
+            if SequenceMatcher(None, *pair).ratio() > SIMILAR:
+                similar_tags.append(sorted(pair))
     return similar_tags
 
 if __name__ == "__main__":
