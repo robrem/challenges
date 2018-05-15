@@ -1,3 +1,4 @@
+import operator
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
@@ -18,7 +19,8 @@ def get_tags():
 
 def get_top_tags(tags):
     """Get the TOP_NUMBER of most common tags"""
-    pass
+    sorted_tags = sorted(tags.items(), key=operator.itemgetter(1), reverse=True)
+    return sorted_tags[:TOP_NUMBER]
 
 
 def get_similarities(tags):
