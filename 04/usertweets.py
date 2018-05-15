@@ -11,6 +11,7 @@ DEST_DIR = 'data'
 EXT = 'csv'
 NUM_TWEETS = 100
 
+Tweet = namedtuple('Tweet', ['id_str', 'created_at', 'text'])
 
 class UserTweets(object):
     """TODOs:
@@ -26,17 +27,21 @@ class UserTweets(object):
         auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
         self.api = tweepy.API(auth)
         self.tweets = self.get_tweets()
+        self.output_file = f'{DEST_DIR}/tweets_{self.handle}.{EXT}'
 
     def get_tweets(self):
         tweets = []
-        statuses = self.api.user_timeline(screen_name=self.handle, count=NUM_TWEETS, max_id=self.max_id)
+        statuses = self.api.user_timeline(screen_name=self.handle, count=5, max_id=self.max_id)
         for status in statuses:
-            tweets.append(status.text)
+            tweet = Tweet(status.id_str, status.created_at, status.text)
+            tweets.append(tweet)
         return tweets
 
 
     def save_tweets(self):
-        pass
+        with open(self.output_file, 'w', newline='') as csvfile:
+            wr = csv.writer(csvfile)
+            wr.writerows(self.tweets)
 
     def __len__(self):
         pass
@@ -53,3 +58,4 @@ if __name__ == "__main__":
     #     for tw in user[:5]:
     #         print(tw)
     #     print()
+    pass
