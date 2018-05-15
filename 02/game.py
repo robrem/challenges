@@ -33,13 +33,13 @@ def _get_permutations_draw(letters):
     perms =  [list(itertools.permutations(letters, n)) for n in range(1, NUM_LETTERS + 1)]
     return set([''.join(x) for perm in perms for x in perm])
 
-def validate(guess, draw):
+def _validation(guess, draw):
     """Ensure that all letters of guess are in draw, and guess is in DICTIONARY"""
     if len(guess) > len(draw):
         return False
     if guess.lower() not in DICTIONARY:
         return False
-    # True if resulting Counter is empty, i.e. guess can be made from draw
+    # Resulting Counter will be empty if guess CAN be made from draw
     return not Counter(guess) - Counter(draw)
 
 def calc_score(player_score, optimal_score):
@@ -51,7 +51,7 @@ def main():
 
     while True:
         guess = input('Form a valid word: ').upper()
-        if not validate(guess, draw):
+        if not _validation(guess, draw):
             print('Invalid guess. Try again.')
         else:
             break
