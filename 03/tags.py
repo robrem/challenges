@@ -12,7 +12,6 @@ def get_tags():
     tags = defaultdict(int)
     e = ET.parse(RSS_FEED).getroot()
     for category in e.iter('category'):
-        print(category.text.replace('-', ' '))
         tags[category.text] += 1
     return tags
 
