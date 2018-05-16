@@ -18,8 +18,8 @@ class UserTweets(object):
     - [x] create a tweepy api interface
     - [x] get all tweets for passed in handle
     - [x] optionally get up until 'max_id' tweet id
-    - [ ] save tweets to csv file in data/ subdirectory
-    - [ ] implement len() an getitem() magic (dunder) methods"""
+    - [x] save tweets to csv file in data/ subdirectory
+    - [x] implement len() an getitem() magic (dunder) methods"""
     def __init__(self, handle, max_id=None):
         self.handle = handle
         self.max_id = max_id
@@ -28,34 +28,31 @@ class UserTweets(object):
         self.api = tweepy.API(auth)
         self.tweets = self.get_tweets()
         self.output_file = f'{DEST_DIR}/tweets_{self.handle}.{EXT}'
+        self.save_tweets()
 
     def get_tweets(self):
-        tweets = []
-        statuses = self.api.user_timeline(screen_name=self.handle, count=5, max_id=self.max_id)
-        for status in statuses:
-            tweet = Tweet(status.id_str, status.created_at, status.text)
-            tweets.append(tweet)
+        statuses = self.api.user_timeline(screen_name=self.handle, count=NUM_TWEETS, max_id=self.max_id)
+        tweets = [Tweet(status.id_str, status.created_at, status.text.replace('\n', ' ')) for status in statuses]
         return tweets
 
 
     def save_tweets(self):
         with open(self.output_file, 'w', newline='') as csvfile:
             wr = csv.writer(csvfile)
+            wr.writerow(['id_str', 'created_at', 'text'])
             wr.writerows(self.tweets)
 
     def __len__(self):
-        pass
+        return len(self.tweets)
 
     def __getitem__(self, item):
-        pass
+        return self.tweets[item]
 
 
 if __name__ == "__main__":
-
-    # for handle in ('pybites', '_juliansequeira', 'bbelderbos'):
-    #     print('--- {} ---'.format(handle))
-    #     user = UserTweets(handle)
-    #     for tw in user[:5]:
-    #         print(tw)
-    #     print()
-    pass
+    for handle in ('pybites', '_juliansequeira', 'bbelderbos'):
+        print('--- {} ---'.format(handle))
+        user = UserTweets(handle)
+        for tw in user[:5]:
+            print(tw)
+        print()
