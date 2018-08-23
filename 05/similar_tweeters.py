@@ -1,57 +1,97 @@
+import itertools
 import re
 import string
 import sys
-from collections import Counter
+from collections import defaultdict
 
 import nltk
 from nltk.corpus import stopwords
+from gensim import corpora, matutils
 
 from usertweets import UserTweets
 
-def similar_tweeters(user1, user2):
+NUM_TWEETS = 100
+
+def similar_tweeters(user1, user2, num_tweets=NUM_TWEETS):
     """TODOs:
         - [x] Retrieve last n tweets for each user
-        - [ ] Tokenize tweet words and filter for stop words, URLs, digits, punctuation, etc.
+        - [x] Tokenize tweet words and filter for stop words, URLs, digits, punctuation, etc.
         - [ ] Extract main subjects each user tweets about
         - [ ] Compare subjects and calculate a similarity score"""
-    tokens1 = tokenize_tweets(UserTweets(user1).tweets)
-    tokens2 = tokenize_tweets(UserTweets(user2).tweets)
-    subjects1 = extract_subjects(tokens1)
-    subjects2 = extract_subjects(tokens2)
-    return calc_similarity_score(subjects1, subjects2)
+    tokens1 = tokenize_tweets(UserTweets(user1, num_tweets).tweets)
+    tokens2 = tokenize_tweets(UserTweets(user2, num_tweets).tweets)
+    return calc_similarity_score(tokens1, tokens2)
 
 def tokenize_tweets(user_tweets):
-    """Tokenize words for each tweet text in user_tweets filtering out stop words, URLs, digits, punctuation,
-        words that only occur once or are less than 3 characters."""
-    # TODO: url patterms like //t.co/2tkf4zwija are unfiltered
-    tweets = ' '.join([tweet.text for tweet in user_tweets])
+    """
+    Tokenize words for each tweet text in user_tweets filtering out stop words, URLs, digits, punctuation,
+    words that only occur once or are less than 3 characters.
+
+    :return: list of lists, each of which is a tokenized and filtered version of a single tweet text.
+    """
+    tweets = [filter_tweet(tweet.text) for tweet in user_tweets]
+
+    # Remove tokens that only occur once.
+    frequency = defaultdict(int)
+    for tweet in tweets:
+        for token in tweet:
+            frequency[token] += 1
+
+    return [[token for token in tweet if frequency[token] > 1] for tweet in tweets]
+
+def filter_tweet(tweet_text):
     stop_words = set(stopwords.words('english'))
-    url_pattern = '(.*?)http.*?\s?(.*?)'
-    tokens = [token.lower() for token in nltk.word_tokenize(tweets)
-              if token not in stop_words
-              and token not in string.punctuation
-              and len(token) > 3
-              and not token.isdigit()
-              and not re.match(url_pattern, token)]
-    # Remove tokens that only occur once. Multiples records True if token occurs multi times in tokens, False
-    # otherwise. Then, add only tokens that occur mult times back in to tokens list.
-    multiples = Counter(tokens)
-    final_tokens = []
-    for token, count in multiples.items():
-        if count > 1:
-            for _ in range(count):
-                final_tokens.append(token)
-    return final_tokens
+    basic_url_pattern = '(.*?)http.*?\s?(.*?)'
+    twitter_url_pattern = '(.*?)//t\.co/?(.*?)'
 
-def extract_subjects(tokens):
-    """Extract the main subjects found in tokens."""
-    # TODO: reduce to stem words?
-    subjects = []
-    return subjects
+    return [token.lower() for token in nltk.word_tokenize(tweet_text)
+            if len(token) > 3
+            and token not in stop_words
+            and token not in string.punctuation
+            and not token.isdigit()
+            and not re.match(basic_url_pattern, token)
+            and not re.match(twitter_url_pattern, token)]
 
-def calc_similarity_score(subjects1, subject2):
-    """Calculate a similarity score comparing subjects1 and subjects2."""
-    pass
+def get_corpus(tokenized_tweets):
+    '''
+    Extract the subjects found in tokens and return a corpus-like structure where all documents have been flattened
+    to a single list of tokens and counts.
+    '''
+    # TODO: reduce to stem words first?
+
+    # assign unique integer IDs to each token
+    dictionary = corpora.Dictionary(tokenized_tweets)
+
+    # represent each tweet as counts of its tokens that appear in vocabulary in the form of tuples:
+    # (id_of_token_in_vocabulary, count)
+    corpus = [dictionary.doc2bow(tweet) for tweet in tokenized_tweets]
+
+    return flatten(corpus)
+
+def flatten(corpus):
+    '''
+    Transform corpus from a list of lists to a single list, accumulating the counts for a single token from
+    all documents.
+    :param corpus: a lists of lists, each of which represents a tokenized document in the form of tuples:
+    (token_id, count).
+    :return: the flattened corpus
+    '''
+    corpus_counts = defaultdict(int)
+
+    for doc in corpus:
+        for token_id, count in doc:
+            corpus_counts[token_id] += count
+
+    return [(token_id, count) for token_id, count in corpus_counts.items()]
+
+def calc_similarity_score(tokens1, tokens2):
+    '''
+    Calculate a similarity score comparing tokens1 and tokens2 using cosine similarity.
+    '''
+    corpus1 = get_corpus(tokens1)
+    corpus2 = get_corpus(tokens2)
+    return matutils.cossim(corpus1, corpus2)
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -59,4 +99,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     user1, user2 = sys.argv[1:3]
-    similar_tweeters(user1, user2)
+    score = similar_tweeters(user1, user2)
+    print(f'Similarity score: {score}')
