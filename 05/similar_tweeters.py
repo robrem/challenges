@@ -13,11 +13,13 @@ from usertweets import UserTweets
 NUM_TWEETS = 100
 
 def similar_tweeters(user1, user2, num_tweets=NUM_TWEETS):
-    """TODOs:
+    '''
+    TODOs:
         - [x] Retrieve last n tweets for each user
         - [x] Tokenize tweet words and filter for stop words, URLs, digits, punctuation, etc.
-        - [ ] Extract main subjects each user tweets about
-        - [ ] Compare subjects and calculate a similarity score"""
+        - [x] Extract main subjects each user tweets about
+        - [x] Compare subjects and calculate a similarity score
+    '''
     tokens1 = tokenize_tweets(UserTweets(user1, num_tweets).tweets)
     tokens2 = tokenize_tweets(UserTweets(user2, num_tweets).tweets)
     return calc_similarity_score(tokens1, tokens2)
@@ -66,6 +68,8 @@ def get_corpus(tokenized_tweets):
     # (id_of_token_in_vocabulary, count)
     corpus = [dictionary.doc2bow(tweet) for tweet in tokenized_tweets]
 
+    # flatten the corpus to a single list, rather than list of lists, so we can treat a single user's tweets as a
+    # single document, rather than a group of documents, for comparison.
     return flatten(corpus)
 
 def flatten(corpus):
